@@ -509,4 +509,5 @@ Contributions welcome! Please:
 
 ---
 
-**⚠️ Disclaimer**: This is a simulation for educational purposes only. Not financial advice. Do not use for real trading decisions.
+![Trading Dashboard](dashboard.png)
+
