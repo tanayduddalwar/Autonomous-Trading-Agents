@@ -18,3 +18,11 @@ try:
     print("✅ Trade successful!")
 except Exception as e:
     print(f"❌ Trade failed: {e}")
+
+try:
+    ray = Account.get("ray")
+    print(f"Balance: ${ray.balance}")
+    result = ray.buy_shares("AAPL", 5, "Manual test")
+    print("✅ Trade successful!")
+except Exception as e:
+    print(f"❌ Trade failed: {e}")    
