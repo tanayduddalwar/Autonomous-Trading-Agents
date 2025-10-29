@@ -20,7 +20,6 @@ An autonomous multi-agent trading simulation where AI traders with distinct pers
 - [API Keys & Environment Variables](#api-keys--environment-variables)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
-- [License](#license)
 
 ## 🎯 Overview
 
@@ -509,5 +508,5 @@ Contributions welcome! Please:
 
 ---
 
-![Trading Dashboard](dashboard.png)
+![Trading Dashboard](dashboard1.png)
 
