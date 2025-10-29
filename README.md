@@ -4,7 +4,7 @@ An autonomous multi-agent trading simulation where AI traders with distinct pers
 
 ![Trading Dashboard](https://img.shields.io/badge/Status-Active-success)
 ![Python](https://img.shields.io/badge/Python-3.12-blue)
-![License](https://img.shields.io/badge/License-MIT-green)
+
 
 ## 📋 Table of Contents
 
@@ -267,6 +267,145 @@ ai-trading-simulation/
 └── README.md             # This file
 ```
 
+### Core Components
+
+#### 1. `trading_floor.py` - Orchestrator/Scheduler
+**Role:** The main entry point that coordinates everything
+
+**Responsibilities:**
+- Creates 4 trader instances (Warren, George, Ray, Cathie) with different personalities
+- Runs on a configurable schedule (every N minutes via `RUN_EVERY_N_MINUTES`)
+- Checks if market is open before running (optional)
+- Executes all traders concurrently using `asyncio.gather()`
+- Toggles traders between "trading" and "rebalancing" modes
+
+**Key Code:**
+```python
+traders = create_traders()  # Creates 4 Trader instances
+await asyncio.gather(*[trader.run() for trader in traders])  # Runs all traders
+```
+
+---
+
+#### 2. `traders.py` - AI Agent Logic
+**Role:** Defines the `Trader` class containing the AI agent brain
+
+**Flow per trader:**
+1. **Creates an AI agent** with:
+   - A researcher tool (for market research via web search)
+   - MCP servers (for accessing market data and account operations)
+   - Instructions specific to that trader's personality
+2. **Fetches account data** (current balance, holdings, transaction history)
+3. **Fetches strategy** (the trader's investment philosophy)
+4. **Sends prompt to AI agent** asking it to:
+   - Make trades (buy/sell decisions), OR
+   - Rebalance portfolio
+5. **AI agent analyzes and decides** based on:
+   - Market research (via researcher tool)
+   - Current portfolio state
+   - Assigned investment strategy
+6. **Executes trades** via MCP server tools (which call `accounts.py` methods)
+
+**Key Code:**
+```python
+# Creates message for AI agent
+message = trade_message(name, strategy, account)  # or rebalance_message
+
+# AI agent runs with max turns
+await Runner.run(self.agent, message, max_turns=MAX_TURNS)
+```
+
+---
+
+#### 3. `accounts.py` - Trading Operations & State Management
+**Role:** Manages account state and executes all trading operations
+
+**Responsibilities:**
+1. **Stores account data** in database:
+   - Cash balance
+   - Stock holdings (symbol → quantity mapping)
+   - Complete transaction history
+   - Portfolio value time series
+   
+2. **Provides trading methods** that AI agents call:
+   - `buy_shares(symbol, quantity, rationale)` - Purchase stocks
+   - `sell_shares(symbol, quantity, rationale)` - Sell stocks
+   - `calculate_portfolio_value()` - Compute total worth (cash + holdings)
+   - `report()` - Return JSON summary of account state
+
+3. **Enforces trading rules**:
+   - Validates sufficient funds before buying
+   - Validates share ownership before selling
+   - Applies 0.2% spread on all trades
+   - Prevents invalid transactions
+
+4. **Logs all actions** to database for monitoring and audit trail
+
+**Key Code:**
+```python
+def buy_shares(self, symbol, quantity, rationale):
+    price = get_share_price(symbol)
+    total_cost = price * quantity * (1 + SPREAD)
+    if total_cost > self.balance:
+        raise ValueError("Insufficient funds")
+    self.balance -= total_cost
+    self.holdings[symbol] = self.holdings.get(symbol, 0) + quantity
+    self.transactions.append(transaction)
+    self.save()
+```
+
+---
+
+#### 4. `ui.py` - Visualization & Monitoring
+**Role:** Gradio-based web dashboard for live monitoring
+
+**Features:**
+1. **Portfolio value charts** showing performance over time
+2. **Current holdings table** with real-time positions
+3. **Recent transactions log** with timestamps and rationale
+4. **Profit/loss indicators** with color coding
+5. **Auto-refresh** every 2 minutes for latest data
+
+**Note:** The `Trader` class in `ui.py` is a data container for visualization, separate from the AI agent in `traders.py`.
+
+---
+
+#### Supporting Files
+
+**`templates.py`** - AI prompt engineering
+- Contains instruction templates for trader agents
+- Defines trade and rebalance message formats
+- Includes tool descriptions and examples
+
+**`market.py`** - Market data integration
+- Interfaces with Polygon.io API for stock prices
+- Caches market data to reduce API calls
+- Falls back to mock data if API unavailable
+
+**`database.py`** - Persistence layer
+- SQLite-based storage for accounts and logs
+- Handles all read/write operations
+- Ensures data consistency
+
+**`tracers.py`** - Logging and observability
+- Custom tracing processor for agent activities
+- Logs all agent actions, function calls, and errors
+- Provides debugging visibility
+
+**`mcp_params.py`** - MCP server configuration
+- Defines MCP server parameters for each trader
+- Configures market data and account operation servers
+
+**`accounts_client.py`** - MCP client
+- Exposes account operations as MCP tools
+- Bridges AI agents with account methods
+- Handles resource reading for strategies
+
+**`reset_accounts.py`** - Account initialization
+- Resets all trader accounts to initial state
+- Sets unique strategies for each trader
+- Useful for starting fresh simulations
+
 ## 🔄 How It Works
 
 ### 1. Scheduler Loop (trading_floor.py)
@@ -367,8 +506,6 @@ Contributions welcome! Please:
 3. Commit changes (`git commit -m 'Add amazing feature'`)
 4. Push to branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-
 
 ---
 
