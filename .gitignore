@@ -5,6 +5,7 @@
 3_lab3.ipynb
 4_lab4.ipynb
 5_lab5.ipynb
-./community_contributions
+community_contributions/
+__pycache__/
 
 
